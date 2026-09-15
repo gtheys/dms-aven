@@ -114,9 +114,13 @@ QtObject {
     property real projectCacheAt: 0
 
     function refreshProjects() {
-        var proc = projectProcComponent.createObject(root);
-        proc.command = avenArgs(["project", "list", "--json"]);
-        proc.running = true;
+        Proc.runCommand("aven.listProjects", avenArgs(["project", "list", "--json"]), function (stdout, exitCode) {
+            if (exitCode !== 0) {
+                root.lastError = "aven project list failed (exit " + exitCode + ")";
+                return;
+            }
+            root.applyProjectJson(stdout);
+        });
     }
 
     function applyProjectJson(stdout) {
@@ -301,92 +305,29 @@ QtObject {
     }
 
     // ---- command execution ---------------------------------------------------
+    // AIDEV-NOTE: root must stay a bare QtObject (DMS launcher plugin contract),
+    // and QtObject has no default property — declaring Process/Timer/Component
+    // children fails at load with "Cannot assign to non-existent default
+    // property". All process spawning goes through the Proc service instead.
+    // Proc gives no stderr, so error toasts only carry the exit code.
     function runAven(argv, successMsg) {
-        var proc = execProcComponent.createObject(root);
-        proc.command = avenArgs(argv);
-        proc.successMsg = successMsg;
-        proc.running = true;
+        Proc.runCommand(null, avenArgs(argv), function (stdout, exitCode) {
+            if (exitCode === 0) {
+                var ref = stdout.trim().split("\n")[0];
+                ToastService.showInfo("Aven", successMsg + (ref ? " (" + ref + ")" : ""));
+            } else {
+                ToastService.showError("Aven", "aven failed (exit " + exitCode + ")");
+            }
+        });
     }
 
     function createProjectThenAdd(name, title) {
-        var proc = createProcComponent.createObject(root);
-        proc.projectName = name;
-        proc.taskTitle = title;
-        proc.command = avenArgs(["project", "create", name]);
-        proc.running = true;
-    }
-
-    Component {
-        id: projectProcComponent
-        Process {
-            id: proc
-            stdout: StdioCollector {
-                onStreamFinished: root.applyProjectJson(this.text)
+        Proc.runCommand(null, avenArgs(["project", "create", name]), function (stdout, exitCode) {
+            if (exitCode === 0) {
+                root.runAven(["add", title, "--project", name], "Added \u201C" + title + "\u201D to new project " + name);
+            } else {
+                ToastService.showError("Aven", "aven project create failed (exit " + exitCode + ")");
             }
-            stderr: StdioCollector {}
-            onExited: function (code) {
-                if (code !== 0)
-                    root.lastError = "aven project list failed (exit " + code + ")";
-                this.destroy();
-            }
-        }
-    }
-
-    Component {
-        id: execProcComponent
-        Process {
-            id: proc
-            property string successMsg: ""
-            stdout: StdioCollector {
-                onStreamFinished: {
-                    var out = this.text.trim();
-                    if (out.length > 0)
-                        proc.ref = out;
-                }
-            }
-            property string ref: ""
-            stderr: StdioCollector {
-                onStreamFinished: {
-                    var err = this.text.trim();
-                    if (err.length > 0)
-                        proc.err = err;
-                }
-            }
-            property string err: ""
-            onExited: function (code) {
-                if (code === 0)
-                    ToastService.showInfo("Aven", proc.successMsg + (proc.ref ? " (" + proc.ref.split("\n")[0] + ")" : ""));
-                else
-                    ToastService.showError("Aven", proc.err || ("aven failed (exit " + code + ")"));
-                this.destroy();
-            }
-        }
-    }
-
-    Component {
-        id: createProcComponent
-        Process {
-            id: proc
-            property string projectName: ""
-            property string taskTitle: ""
-            stdout: StdioCollector {}
-            stderr: StdioCollector {
-                onStreamFinished: {
-                    var err = this.text.trim();
-                    if (err.length > 0)
-                        proc.err = err;
-                }
-            }
-            property string err: ""
-            onExited: function (code) {
-                if (code === 0) {
-                    // Project created; now add the task to it.
-                    root.runAven(["add", proc.taskTitle, "--project", proc.projectName], "Added \u201C" + proc.taskTitle + "\u201D to new project " + proc.projectName);
-                } else {
-                    ToastService.showError("Aven", proc.err || ("aven project create failed (exit " + code + ")"));
-                }
-                this.destroy();
-            }
-        }
+        });
     }
 }

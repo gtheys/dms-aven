@@ -34,6 +34,49 @@ QtObject {
     property bool showInboxOption: true
     property bool showCreateOption: true
 
+    // The DMS session often has a minimal PATH without ~/.local/bin, so a bare
+    // "aven" may not resolve even though the user's shell finds it. On load we
+    // upgrade the setting to an absolute path by probing common locations.
+    function resolveAvenBin() {
+        var configured = avenBin;
+        if (configured.indexOf("/") === 0) {
+            // Already an absolute path — trust the user.
+            return;
+        }
+        var home = Quickshell.env("HOME");
+        var candidates = [
+            configured,
+            home + "/.local/bin/" + configured,
+            home + "/bin/" + configured,
+            "/usr/local/bin/" + configured,
+            "/usr/bin/" + configured,
+            "/opt/homebrew/bin/" + configured
+        ];
+        var i = 0;
+        function tryNext() {
+            if (i >= candidates.length)
+                return; // keep bare name; startup check will surface the problem
+            var candidate = candidates[i++];
+            var args = candidate.indexOf("/") === 0
+                ? ["test", "-x", candidate]
+                : ["which", candidate];
+            Proc.runCommand("aven.resolveBin", args, function (stdout, exitCode) {
+                if (exitCode === 0 && candidate.indexOf("/") === 0) {
+                    avenBin = candidate;
+                    saveSetting("avenBinResolved", candidate);
+                    return;
+                }
+                if (exitCode === 0 && stdout.trim().length > 0) {
+                    avenBin = stdout.trim();
+                    saveSetting("avenBinResolved", avenBin);
+                    return;
+                }
+                tryNext();
+            });
+        }
+        tryNext();
+    }
+
     Component.onCompleted: {
         if (!pluginService)
             return;
@@ -42,6 +85,7 @@ QtObject {
         showInboxOption = pluginService.loadPluginData(pluginId, "showInboxOption", true);
         showCreateOption = pluginService.loadPluginData(pluginId, "showCreateOption", true);
         trigger = pluginService.loadPluginData(pluginId, "trigger", "av");
+        resolveAvenBin();
     }
 
     function saveSetting(key, value) {

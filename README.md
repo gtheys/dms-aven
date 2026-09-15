@@ -59,6 +59,12 @@ Results are tagged with the category `Aven` so you can filter them fast.
 | `showInboxOption` | `true` | Show "Add to Inbox (no project)" |
 | `showCreateOption` | `true` | Show "Create project … and add task" |
 
+## Troubleshooting
+
+**"aven CLI not found" at plugin load** — the DMS session runs with a minimal PATH that usually omits `~/.local/bin` (where the aven installer puts the binary). The plugin probes `PATH`, `~/.local/bin`, `~/bin`, `/usr/local/bin`, and `/usr/bin` automatically. If aven lives somewhere else, set the full path in **DMS Settings → Plugins → Aven Tasks → "aven binary"**.
+
+No results when typing `av ...`? Run `aven project list --json` in a terminal to confirm aven itself works, then reload the plugin: `dms ipc call plugins reload aven`.
+
 ## How it works
 
 The plugin is a thin, lazy wrapper over the verified aven CLI surface:

@@ -2,7 +2,7 @@
   "id": "aven",
   "name": "Aven Tasks",
   "description": "Quick-add tasks to your aven todo manager from DankLauncher. Pick a project from the results, or create a new one on the fly.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Geert Theys",
   "icon": "task_alt",
   "type": "launcher",

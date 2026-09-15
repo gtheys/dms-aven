@@ -1,0 +1,16 @@
+{
+  "id": "aven",
+  "name": "Aven Tasks",
+  "description": "Quick-add tasks to your aven todo manager from DankLauncher. Pick a project from the results, or create a new one on the fly.",
+  "version": "0.1.0",
+  "author": "Geert Theys",
+  "icon": "task_alt",
+  "type": "launcher",
+  "trigger": "av",
+  "viewMode": "list",
+  "component": "./AvenLauncher.qml",
+  "settings": "./AvenSettings.qml",
+  "startupCheck": "./StartupCheck.qml",
+  "dependencies": ["aven"],
+  "permissions": ["settings_read", "settings_write"]
+}

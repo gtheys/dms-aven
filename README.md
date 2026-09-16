@@ -6,6 +6,8 @@ Type `av <task title>` in DankLauncher and pick the project the task goes to. If
 
 ## Features
 
+![Aven Tasks plugin in DankLauncher](screenshot.png)
+
 - **Project picker as you type** — every aven project shows up as a selectable result
 - **Direct targeting** — `av fix login @work` narrows to matching projects (matches on key, name, or ref prefix)
 - **Create projects inline** — `av fix login @newthing` with no match offers *"Create project 'newthing' and add task"*
@@ -61,7 +63,7 @@ Results are tagged with the category `Aven` so you can filter them fast.
 
 ## Troubleshooting
 
-**"aven CLI not found" at plugin load** — the DMS session runs with a minimal PATH that usually omits `~/.local/bin` (where the aven installer puts the binary). The plugin probes `PATH`, `~/.local/bin`, `~/bin`, `/usr/local/bin`, and `/usr/bin` automatically. If aven lives somewhere else, set the full path in **DMS Settings → Plugins → Aven Tasks → "aven binary"**.
+**"aven CLI not found" at plugin load** — the DMS session runs with a minimal PATH that usually omits `~/.local/bin` (where the aven installer puts the binary). The plugin probes `PATH`, `~/.local/bin`, `~/.cargo/bin`, `~/bin`, `/usr/local/bin`, and `/usr/bin` automatically. If aven lives somewhere else, set the full path in **DMS Settings → Plugins → Aven Tasks → "aven binary"**.
 
 No results when typing `av ...`? Run `aven project list --json` in a terminal to confirm aven itself works, then reload the plugin: `dms ipc call plugins reload aven`.
 

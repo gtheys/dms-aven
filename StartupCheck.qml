@@ -18,6 +18,7 @@ QtObject {
     property var candidates: [
         "aven",
         Quickshell.env("HOME") + "/.local/bin/aven",
+        Quickshell.env("HOME") + "/.cargo/bin/aven",
         Quickshell.env("HOME") + "/bin/aven",
         "/usr/local/bin/aven",
         "/usr/bin/aven",

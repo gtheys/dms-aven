@@ -47,6 +47,7 @@ QtObject {
         var candidates = [
             configured,
             home + "/.local/bin/" + configured,
+            home + "/.cargo/bin/" + configured,
             home + "/bin/" + configured,
             "/usr/local/bin/" + configured,
             "/usr/bin/" + configured,

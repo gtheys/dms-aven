@@ -29,7 +29,7 @@ PluginSettings {
     StringSetting {
         settingKey: "avenBin"
         label: "aven binary"
-        description: "Name or full path of the aven CLI. A bare name is auto-resolved to an absolute path (PATH, ~/.local/bin, ~/bin, /usr/local/bin, /usr/bin) because the DMS session often has a minimal PATH."
+        description: "Name or full path of the aven CLI. A bare name is auto-resolved to an absolute path (PATH, ~/.local/bin, ~/.cargo/bin, ~/bin, /usr/local/bin, /usr/bin) because the DMS session often has a minimal PATH."
         placeholder: "aven"
         defaultValue: "aven"
     }

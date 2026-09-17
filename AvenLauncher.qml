@@ -116,9 +116,13 @@ QtObject {
     // project carries its `workspace` so add can target it.
     property var projectCache: []
     property real projectCacheAt: 0
+    // AIDEV-NOTE: workspace list cached so getItems() can offer one inbox per
+    // workspace (inboxes are per-workspace silos, like projects).
+    property var workspaceCache: []
 
     function refreshProjects() {
         if (defaultWorkspace && defaultWorkspace.length > 0) {
+            workspaceCache = [defaultWorkspace];
             fetchWorkspaceProjects(defaultWorkspace, null);
             return;
         }
@@ -135,6 +139,7 @@ QtObject {
                 if (line.length > 0)
                     workspaces.push(line.split(/\s+/)[0]);
             }
+            workspaceCache = workspaces;
             fetchWorkspaceProjects(workspaces, null);
         });
     }
@@ -247,12 +252,18 @@ QtObject {
                 items.push(makeAddItem(title, matches[i]));
         }
 
-        if (showInboxOption && parsed.projectQuery.length === 0)
-            items.push(makeInboxItem(title));
+        if (showInboxOption && parsed.projectQuery.length === 0) {
+            if (workspaceCache.length > 0) {
+                for (var w = 0; w < workspaceCache.length; w++)
+                    items.push(makeInboxItem(title, workspaceCache[w]));
+            } else {
+                items.push(makeInboxItem(title, ""));
+            }
+        }
 
         // Never leave the user without a way out.
         if (items.length === 0)
-            items.push(makeInboxItem(title));
+            items.push(makeInboxItem(title, ""));
         if (showCreateOption && parsed.projectQuery.length === 0)
             items.push(makeHintItem("\u201C@name\u201D picks a project directly", "No match? aven will offer to create it", "lightbulb"));
 
@@ -284,14 +295,14 @@ QtObject {
         };
     }
 
-    function makeInboxItem(title) {
+    function makeInboxItem(title, workspace) {
         return {
-            name: "Add to Inbox (no project)",
+            name: workspace ? "Add to Inbox [" + workspace + "]" : "Add to Inbox (no project)",
             icon: "material:inbox",
-            comment: "aven add \u201C" + title + "\u201D — triage later in the aven TUI",
-            action: "custom:inbox:" + title,
+            comment: "aven add \u201C" + title + "\u201D \u2192 inbox" + (workspace ? " [" + workspace + "]" : "") + " — triage later in the aven TUI",
+            action: "custom:inbox:" + (workspace || "") + ":" + title,
             categories: ["Aven"],
-            keywords: ["aven", "todo", "task", "inbox"]
+            keywords: ["aven", "todo", "task", "inbox", workspace || ""]
         };
     }
 
@@ -329,12 +340,18 @@ QtObject {
             runAven(["add", title, "--project", projectKey, "--workspace", ws],
                     "Added \u201C" + title + "\u201D to " + projectKey);
         } else if (verb === "inbox") {
-            if (rest.length === 0)
+            var ci = rest.indexOf(":");
+            var inboxWs = ci >= 0 ? rest.substring(0, ci) : "";
+            var inboxTitle = ci >= 0 ? rest.substring(ci + 1) : rest;
+            if (inboxTitle.length === 0)
                 return;
             // AIDEV-NOTE: bare `aven add` infers project from cwd and fails
             // with exit 1 ("error project-required") when Quickshell's cwd is
             // not a routed project dir. Pass --project inbox explicitly.
-            runAven(["add", rest, "--project", "inbox"], "Added \u201C" + rest + "\u201D to inbox");
+            var inboxArgv = ["add", inboxTitle, "--project", "inbox"];
+            if (inboxWs.length > 0)
+                inboxArgv.push("--workspace", inboxWs);
+            runAven(inboxArgv, "Added \u201C" + inboxTitle + "\u201D to inbox" + (inboxWs ? " [" + inboxWs + "]" : ""));
         } else if (verb === "create") {
             var cArg = rest.indexOf(":");
             var newProject = cArg >= 0 ? rest.substring(0, cArg) : rest;

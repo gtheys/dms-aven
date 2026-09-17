@@ -331,7 +331,10 @@ QtObject {
         } else if (verb === "inbox") {
             if (rest.length === 0)
                 return;
-            runAven(["add", rest], "Added \u201C" + rest + "\u201D to inbox");
+            // AIDEV-NOTE: bare `aven add` infers project from cwd and fails
+            // with exit 1 ("error project-required") when Quickshell's cwd is
+            // not a routed project dir. Pass --project inbox explicitly.
+            runAven(["add", rest, "--project", "inbox"], "Added \u201C" + rest + "\u201D to inbox");
         } else if (verb === "create") {
             var cArg = rest.indexOf(":");
             var newProject = cArg >= 0 ? rest.substring(0, cArg) : rest;
